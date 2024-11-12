@@ -71,10 +71,9 @@
                 }
               else
               {
-                  //if (!string.IsNullOrEmpty(slovo))
-                  //{
-                      zpravy.Add(new Zprava(odesilatel_, slovo));
-                  //}
+                  if (slovo !== "") {
+                      zpravy.push(new Zprava(odesilatel_, slovo));
+                  }
               }
             }
         });
@@ -85,8 +84,9 @@
 
     // Pomocná funkce pro kontrolu, zda je slovo časem
     function isTime(slovo) {
-        // Regulární výraz pro rozpoznání času ve formátu HH:MM nebo HH:MM:SS
-        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
-        return timeRegex.test(slovo);
-    }
+  // Regulární výraz pro rozpoznání času ve formátu "Day HH:MM", "Day HH:MM:SS", "HH:MM" nebo "HH:MM:SS"
+  const timeRegex = /^((Mon|Tues|Wed|Thu|Fri|Sat|Sun)\s)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+  return timeRegex.test(slovo);
+}
+
 })();
