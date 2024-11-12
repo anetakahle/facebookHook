@@ -1,24 +1,23 @@
 // ==UserScript==
-// @name        New script facebook.com 2
+// @name        Log All Messages in Facebook Conversation
 // @namespace   Violentmonkey Scripts
 // @match       https://www.facebook.com/*
 // @grant       none
 // @version     1.0
-// @author      -
-// @description 10/24/2024, 12:17:05 PM
+// @description Logs all messages in a Facebook conversation
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-      // Vyčištění konzole a výpis úvodní zprávy
+    // Vyčištění konzole a výpis úvodní zprávy
     console.clear();
-    console.log("haha");
+    console.log('Začátek kódu');
 
-      // Seznam frází, které mají být potlačeny v konzoli
+    // Seznam frází, které mají být potlačeny v konzoli
     var retardedBs = [ "Stop", "intended for", "selfxss", "Tato funkce prohlížeče je určena pro vývojáře", "Zadržte", "Další informace najdete" ];
 
-      // Předefinování console.log pro potlačení určitých zpráv
+    // Předefinování console.log pro potlačení určitých zpráv
     const originalLog = console.log;
     console.log = function(...args) {
         if (args.length && typeof args[0] === 'string' && retardedBs.some(x => args[0].includes(x))) {
@@ -27,40 +26,67 @@
         originalLog.apply(console, args);
     };
 
-    // Vytvoření MutationObserver pro sledování změn v DOM
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'characterData') {
-                // Kontrola změny textu
-                const newText = mutation.target.textContent;
-                if (newText === 'hook!') {
-                    console.log('Nalezen text hook!');
-                    alert("yay");
+    // Zpoždění 5000 milisekund
+    setTimeout(() => {
+        const messageContainers = document.querySelectorAll('div[aria-label^="Messages in conversation with"]');
+
+        if (messageContainers.length > 0) {
+            messageContainers.forEach((messagesContainer) => {
+                logAllMessages(messagesContainer);
+            });
+        } else {
+            console.warn('Žádný kontejner zpráv nebyl nalezen.');
+        }
+    }, 5000);
+
+    // Funkce pro výpis všech zpráv a uložení jejich textu do seznamu
+    function logAllMessages(container) {
+        // Najděte všechny elementy, které obsahují text zpráv
+        const messageElements = container.querySelectorAll('div[role="grid"] div[role="gridcell"] span'); // Upravte selektor podle potřeby
+
+        class Zprava {
+            constructor(odesilatel, obsah) {
+                this.odesilatel = odesilatel;
+                this.obsah = obsah;
+            }
+
+            toString() {
+                return `${this.odesilatel}: ${this.obsah}`;
+            }
+        }
+
+        let zpravy = [];
+        let odesilatel_ = null;
+
+        messageElements.forEach(messageElement => {
+            let slovo = messageElement.textContent.trim();
+
+            if (odesilatel_ === null) {
+                if (!isTime(slovo) && slovo !== 'Enter') {
+                    odesilatel_ = slovo;
                 }
-            } else if (mutation.addedNodes.length) {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        const spans = node.getElementsByTagName('span');
-                        Array.from(spans).forEach((span) => {
-                            if (span.textContent === 'hook!') {
-                                console.log('Nalezen text hook!');
-                                alert("yay");
-                            }
-                        });
-                    }
-                });
+            } else {
+                if (slovo === 'Enter') {
+                    odesilatel_ = null;
+                }
+              else
+              {
+                  //if (!string.IsNullOrEmpty(slovo))
+                  //{
+                      zpravy.Add(new Zprava(odesilatel_, slovo));
+                  //}
+              }
             }
         });
-    });
 
-    // Konfigurace MutationObserver
-    const config = {
-        childList: true,
-        subtree: true,
-        characterData: true,
-        characterDataOldValue: true
-    };
+        // Vypište textový obsah do konzole
+        zpravy.forEach(zprava => console.log(zprava.toString()));
+    }
 
-    // Zahájení sledování změn v dokumentu
-    observer.observe(document.body, config);
+    // Pomocná funkce pro kontrolu, zda je slovo časem
+    function isTime(slovo) {
+        // Regulární výraz pro rozpoznání času ve formátu HH:MM nebo HH:MM:SS
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+        return timeRegex.test(slovo);
+    }
 })();
