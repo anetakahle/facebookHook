@@ -1,0 +1,66 @@
+// ==UserScript==
+// @name        New script facebook.com 2
+// @namespace   Violentmonkey Scripts
+// @match       https://www.facebook.com/*
+// @grant       none
+// @version     1.0
+// @author      -
+// @description 10/24/2024, 12:17:05 PM
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+      // Vyčištění konzole a výpis úvodní zprávy
+    console.clear();
+    console.log("haha");
+
+      // Seznam frází, které mají být potlačeny v konzoli
+    var retardedBs = [ "Stop", "intended for", "selfxss", "Tato funkce prohlížeče je určena pro vývojáře", "Zadržte", "Další informace najdete" ];
+
+      // Předefinování console.log pro potlačení určitých zpráv
+    const originalLog = console.log;
+    console.log = function(...args) {
+        if (args.length && typeof args[0] === 'string' && retardedBs.some(x => args[0].includes(x))) {
+            return;
+        }
+        originalLog.apply(console, args);
+    };
+
+    // Vytvoření MutationObserver pro sledování změn v DOM
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'characterData') {
+                // Kontrola změny textu
+                const newText = mutation.target.textContent;
+                if (newText === 'hook!') {
+                    console.log('Nalezen text hook!');
+                    alert("yay");
+                }
+            } else if (mutation.addedNodes.length) {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const spans = node.getElementsByTagName('span');
+                        Array.from(spans).forEach((span) => {
+                            if (span.textContent === 'hook!') {
+                                console.log('Nalezen text hook!');
+                                alert("yay");
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // Konfigurace MutationObserver
+    const config = {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        characterDataOldValue: true
+    };
+
+    // Zahájení sledování změn v dokumentu
+    observer.observe(document.body, config);
+})();
